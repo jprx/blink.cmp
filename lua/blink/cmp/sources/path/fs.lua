@@ -39,6 +39,12 @@ function fs.read_file(path, byte_limit)
   return async.task.new(function(resolve, reject)
     uv.fs_open(path, 'r', 438, function(open_err, fd)
       if open_err or fd == nil then return reject(open_err) end
+      local stat = uv.fs_fstat(fd)
+      if not stat then return reject('stat failed') end
+      if stat.type ~= 'file' then
+        uv.fs_close(fd)
+        return reject('not a regular file')
+      end
       uv.fs_read(fd, byte_limit, 0, function(read_err, data)
         uv.fs_close(fd, function() end)
         if read_err or data == nil then return reject(read_err) end
